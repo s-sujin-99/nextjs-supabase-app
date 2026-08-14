@@ -90,10 +90,8 @@ export default function Page({ params }: { params: { id: string } }) {
 
 ### Typed Routes 활용
 
-> ⚠️ 이 프로젝트의 `next.config.ts`는 현재 `cacheComponents: true`만 설정되어 있고 `typedRoutes`는 켜져 있지 않습니다. 아래 코드는 켤 경우의 사용법이며, 켜기 전까지는 `<Link href="/nonexistent-route">` 같은 존재하지 않는 경로도 컴파일 에러 없이 통과합니다.
-
 ```typescript
-// 🚀 typedRoutes를 켰다면: Typed Routes로 타입 안전성 보장
+// 🚀 필수: Typed Routes로 타입 안전성 보장
 import Link from 'next/link'
 
 // next.config.ts에서 typedRoutes: true 설정 필요
@@ -322,41 +320,34 @@ export default function UserForm() {
 
 ### Middleware → Proxy 전환 (Next 16 Breaking Change)
 
-Next.js 16.0.0부터 `middleware.ts`는 `proxy.ts`로 이름이 바뀌었고 함수명도 `middleware` → `proxy`로 변경되었습니다. Node.js 런타임이 기본값입니다(15.2에서 실험적으로 도입, 15.5에서 stable, 16에서 기본값으로 전환). **이 프로젝트에는 이미 루트에 `proxy.ts`가 있고, 실제 인증 리다이렉트 로직도 구현되어 있습니다**:
+Next.js 16.0.0부터 `middleware.ts`는 `proxy.ts`로 이름이 바뀌었고 함수명도 `middleware` → `proxy`로 변경되었습니다. Node.js 런타임이 기본값입니다(15.2에서 실험적으로 도입, 15.5에서 stable, 16에서 기본값으로 전환). 이 프로젝트에는 아직 `middleware.ts`/`proxy.ts`가 없지만, 추가할 경우 아래 규칙을 따르세요.
 
 ```typescript
-// proxy.ts (실제 코드)
-import { updateSession } from "@/lib/supabase/proxy";
-import { type NextRequest } from "next/server";
+// proxy.ts (기존 middleware.ts를 대체)
+import { NextRequest, NextResponse } from "next/server";
 
-export async function proxy(request: NextRequest) {
-  return await updateSession(request);
-}
-
+// 🔄 Node.js Runtime이 기본값
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
-```
 
-실제 세션 갱신/리다이렉트 로직은 `lib/supabase/proxy.ts`의 `updateSession()`에 있습니다. `supabase.auth.getClaims()` 호출과 `NextResponse` 생성 사이에 다른 로직을 끼워 넣지 말라는 주석 경고가 있으니(세션이 랜덤하게 끊기는 원인이 됨), 이 함수를 수정할 때는 그 순서를 유지하세요. 새 공개 경로를 추가하려면 아래 조건문에 경로를 더하면 됩니다:
+export function proxy(request: NextRequest) {
+  // 🔄 Node.js API 사용 가능
+  const crypto = require("crypto");
+  const hash = crypto.createHash("sha256");
 
-```typescript
-// lib/supabase/proxy.ts 발췌 — 미인증 사용자 리다이렉트 조건
-if (
-  request.nextUrl.pathname !== "/" &&
-  !user &&
-  !request.nextUrl.pathname.startsWith("/login") &&
-  !request.nextUrl.pathname.startsWith("/auth")
-) {
-  const url = request.nextUrl.clone();
-  url.pathname = "/auth/login";
-  return NextResponse.redirect(url);
+  // 인증 로직
+  const token = request.cookies.get("auth-token")?.value;
+
+  if (!token) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  return NextResponse.next();
 }
 ```
 
-다른 프로젝트에서 `middleware.ts`를 `proxy.ts`로 업그레이드할 때는 공식 코드모드를 사용할 수 있습니다.
+기존 `middleware.ts`가 있는 프로젝트를 업그레이드할 때는 공식 코드모드를 사용하세요.
 
 ```bash
 npx @next/codemod@latest next-middleware-to-proxy .
@@ -557,16 +548,20 @@ function UserProfile({ user }: { user: User }) {
 
 ## 코드 품질 체크리스트
 
-개발 완료 후 다음 명령어들을 실행하세요 (`package.json`에는 `dev`/`build`/`start`/`lint`만 정의되어 있어, `typecheck`/`format:check`/`check-all`은 스크립트가 아니라 직접 실행해야 합니다):
+개발 완료 후 다음 명령어들을 반드시 실행하세요:
 
 ```bash
-# 🚀 필수: 타입 체크 (스크립트 없음 — tsc 직접 실행)
-npx tsc --noEmit
+# 🚀 필수: 타입 체크
+npm run typecheck
 
 # 🚀 필수: 린트 검사
 npm run lint
 
-# ⚠️ Prettier 미설치 — 포맷 검사 스크립트 없음
+# ✅ 권장: 포맷 검사
+npm run format:check
+
+# 🚀 필수: 통합 검사
+npm run check-all
 
 # 🚀 필수: 빌드 테스트
 npm run build

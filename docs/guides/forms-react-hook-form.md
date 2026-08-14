@@ -1,21 +1,22 @@
 # React Hook Form + Zod + Server Actions 완전 가이드
 
-이 문서는 Next.js 16(App Router)에서 React Hook Form + Zod + Server Actions를 활용한 폼 처리 패턴을 제공합니다.
-
-> ⚠️ **아직 설치되지 않음**: `react-hook-form`, `@hookform/resolvers`, `zod`는 현재 `package.json`에 없습니다. 이 문서는 폼 로직을 도입할 때 따를 패턴 가이드이며, 실제 코드에 적용하기 전에 먼저 설치가 필요합니다. 현재 프로젝트의 인증 폼들(`components/login-form.tsx`, `components/sign-up-form.tsx` 등)은 이 문서의 Server Actions 패턴을 쓰지 않습니다. `"use client"` 컴포넌트에서 `useState`로 입력값을 관리하고, `lib/supabase/client.ts`의 `createClient()`로 만든 Supabase 클라이언트를 통해 `supabase.auth.signInWithPassword()` 등을 직접 호출하는 방식입니다(커스텀 검증 스키마나 Server Action 없이 Supabase SDK가 서버 검증을 담당). 기존 코드를 참고할 때는 이 문서가 아니라 실제 컴포넌트를 먼저 확인하세요.
->
-> 이 문서의 예제가 참조하는 `@/components/ui/form`, `@/components/ui/textarea`, `@/components/ui/select` shadcn 컴포넌트도 아직 추가되어 있지 않습니다 (`components/ui/`에는 badge, button, card, checkbox, dropdown-menu, input, label만 존재). 사용 전 `npx shadcn@latest add form textarea select`로 먼저 추가하세요.
+이 문서는 Next.js 15.5.3에서 React Hook Form + Zod + Server Actions를 활용한 최적의 폼 처리 패턴을 제공합니다.
 
 ## 🚀 기본 설정 및 셋업
 
 ### 패키지 설치
 
 ```bash
-# 이 패턴을 사용하려면 먼저 설치할 것
+# 필수 패키지 (이미 설치됨)
 npm install react-hook-form @hookform/resolvers zod
 
-# 고급 기능을 위한 추가 패키지 (선택적, 마찬가지로 미설치)
+# 고급 기능을 위한 추가 패키지 (선택적)
 npm install use-debounce react-error-boundary
+
+# 기존 프로젝트에 설치된 관련 패키지들
+# - react-hook-form: ^7.63.0
+# - @hookform/resolvers: ^5.2.2
+# - zod: ^4.1.11
 ```
 
 ### TypeScript 설정 최적화
@@ -1458,9 +1459,10 @@ function SecureForm() {
 
 ## 💡 코드 품질 확인
 
-- [ ] `npx tsc --noEmit` 통과 (프로젝트에 `typecheck` 스크립트가 없어 직접 실행)
-- [ ] `npm run lint` 통과
-- [ ] Prettier 미설치 — 포맷팅은 에디터 설정에 의존 (프로젝트에 Prettier 설정 없음)
+- [ ] `npm run check-all` 통과
+- [ ] TypeScript 엄격 모드 오류 없음
+- [ ] ESLint 규칙 준수
+- [ ] Prettier 포맷팅 적용
 - [ ] 불필요한 리렌더링 없음
 - [ ] 메모리 누수 없음 (useEffect cleanup)
 ```

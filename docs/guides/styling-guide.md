@@ -1,20 +1,19 @@
 # 스타일링 가이드
 
-이 문서는 TailwindCSS v3 + shadcn/ui를 활용한 스타일링 규칙과 모범 사례를 제공합니다.
+이 문서는 TailwindCSS v4 + shadcn/ui를 활용한 스타일링 규칙과 모범 사례를 제공합니다.
 
 ## 🎨 기술 스택 개요
 
-### 핵심 스타일링 도구 (실제 설치된 버전, `package.json` 기준)
+### 핵심 스타일링 도구
 
-- **TailwindCSS v3** (`tailwindcss@^3.4.1`): 유틸리티 기반 CSS 프레임워크. `tailwind.config.ts` + `postcss.config.mjs` 조합(v4의 CSS-first 설정이 아님)
-- **shadcn/ui**: Radix UI 기반 컴포넌트 라이브러리 (`components.json`에서 `new-york` style, baseColor `neutral`)
-- **next-themes**: 다크모드 지원 (`attribute="class"`)
-- **tailwindcss-animate** (`^1.0.7`): shadcn 컴포넌트가 사용하는 `animate-in`/`animate-out` 유틸리티 제공 (`tw-animate-css`가 아님)
-- **CSS Variables**: `app/globals.css`에 정의된 HSL 기반 동적 테마 시스템
+- **TailwindCSS v4**: 유틸리티 기반 CSS 프레임워크
+- **shadcn/ui**: Radix UI 기반 컴포넌트 라이브러리 (new-york style)
+- **next-themes**: 다크모드 지원
+- **tw-animate-css**: 애니메이션 라이브러리
+- **CSS Variables**: 동적 테마 시스템
+- **prettier-plugin-tailwindcss**: 자동 클래스 정렬
 
-> ⚠️ Prettier와 `prettier-plugin-tailwindcss`는 이 프로젝트에 설치되어 있지 않습니다. 클래스 순서는 아래 가이드를 참고해 수동으로 정리하세요.
-
-## 🚀 TailwindCSS 사용 규칙
+## 🚀 TailwindCSS v4 사용 규칙
 
 ### 기본 원칙
 
@@ -181,66 +180,48 @@ npx shadcn@latest add
 
 ### next-themes 활용
 
-이 프로젝트는 별도의 `providers/theme-provider.tsx` 래퍼 없이 `app/layout.tsx`에서 `next-themes`의 `ThemeProvider`를 직접 사용합니다:
-
 ```tsx
-// app/layout.tsx (실제 코드)
-import { ThemeProvider } from "next-themes";
+// providers/theme-provider.tsx
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 
-<ThemeProvider
-  attribute="class"
-  defaultTheme="system"
-  enableSystem
-  disableTransitionOnChange
->
-  {children}
-</ThemeProvider>;
+export function ThemeProvider({ children, ...props }) {
+  return (
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      {...props}
+    >
+      {children}
+    </NextThemesProvider>
+  );
+}
 ```
 
-### 테마 전환 컴포넌트
-
-`components/theme-switcher.tsx`는 토글 버튼이 아니라 Light/Dark/System 3단 선택이 가능한 드롭다운으로 구현되어 있습니다 (`components/ui/dropdown-menu` 기반):
+### 테마 토글 컴포넌트
 
 ```tsx
-// components/theme-switcher.tsx (실제 코드 요약)
-"use client";
 import { useTheme } from "next-themes";
-import { Laptop, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-const ThemeSwitcher = () => {
-  const [mounted, setMounted] = useState(false);
+export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
-  // 하이드레이션 불일치 방지: 마운트 전에는 렌더링하지 않음
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm">
-          {theme === "light" ? (
-            <Sun />
-          ) : theme === "dark" ? (
-            <Moon />
-          ) : (
-            <Laptop />
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
-          <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+    >
+      <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <span className="sr-only">테마 전환</span>
+    </Button>
   );
-};
+}
 ```
-
-새 다크모드 대응 UI를 만들 때는 이 컴포넌트를 참고해 `mounted` 체크(하이드레이션 불일치 방지)를 유지하세요.
 
 ### 다크모드 대응 스타일링
 
@@ -261,40 +242,27 @@ const ThemeSwitcher = () => {
 
 ### CSS 변수 기반 색상
 
-`app/globals.css`에 정의된 실제 색상 변수 (`components.json`의 baseColor `neutral` 기준 — 채도 없는 그레이스케일):
+`src/app/globals.css`에 정의된 색상 변수:
 
 ```css
 :root {
   --background: 0 0% 100%;
-  --foreground: 0 0% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 3.9%;
-  --primary: 0 0% 9%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 96.1%;
-  --secondary-foreground: 0 0% 9%;
-  --muted: 0 0% 96.1%;
-  --muted-foreground: 0 0% 45.1%;
-  --accent: 0 0% 96.1%;
-  --accent-foreground: 0 0% 9%;
+  --foreground: 224 71.4% 4.1%;
+  --primary: 220.9 39.3% 11%;
+  --primary-foreground: 210 20% 98%;
+  --secondary: 220 14.3% 95.9%;
+  --secondary-foreground: 220.9 39.3% 11%;
+  --muted: 220 14.3% 95.9%;
+  --muted-foreground: 220 8.9% 46.1%;
+  --accent: 220 14.3% 95.9%;
+  --accent-foreground: 220.9 39.3% 11%;
   --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 89.8%;
-  --input: 0 0% 89.8%;
-  --ring: 0 0% 3.9%;
-  --chart-1: 12 76% 61%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 24%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 27 87% 67%;
-  --radius: 0.5rem;
+  --destructive-foreground: 210 20% 98%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 224 71.4% 4.1%;
 }
-/* .dark 블록도 동일한 변수 세트를 어두운 값으로 재정의 (app/globals.css 참고) */
 ```
-
-`--chart-*` 변수는 차트/그래프 컴포넌트를 추가할 때 사용할 수 있도록 shadcn이 기본 제공하는 팔레트입니다.
 
 ### 색상 사용 예시
 
@@ -315,17 +283,14 @@ const ThemeSwitcher = () => {
 
 ## ✨ 애니메이션 가이드
 
-### tailwindcss-animate 활용
-
-`tailwind.config.ts`의 `plugins`에 등록되어 있으며, `import` 없이 바로 유틸리티 클래스를 사용합니다. `data-[state=...]` 속성과 조합해 Radix UI 기반 컴포넌트(dropdown-menu 등)의 열림/닫힘 애니메이션에 이미 쓰이고 있습니다:
+### tw-animate-css 활용
 
 ```tsx
-// ✅ data-state 기반 진입/퇴장 애니메이션 (Radix + shadcn 컴포넌트 패턴)
-<div className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
-  드롭다운 콘텐츠
-</div>
+import 'tw-animate-css'
 
-// ✅ Tailwind 기본 애니메이션 (bounce, spin, pulse 등은 별도 플러그인 없이 제공됨)
+// ✅ 내장 애니메이션 사용
+<div className="animate-fadeIn">페이드 인</div>
+<div className="animate-slideUp">슬라이드 업</div>
 <div className="animate-bounce">바운스</div>
 
 // ✅ Tailwind transition 활용
