@@ -133,11 +133,11 @@ AuthButton.tsx            # PascalCase 파일명 (이 프로젝트에서는 미�
 
 ```typescript
 // ✅ 올바른 컴포넌트 네이밍 (export 함수명은 PascalCase, 파일명은 kebab-case)
-export function AuthButton() {}     // components/auth-button.tsx
-export function LoginForm() {}      // components/login-form.tsx
+export function AuthButton() {} // components/auth-button.tsx
+export function LoginForm() {} // components/login-form.tsx
 
 // ❌ 잘못된 컴포넌트 네이밍
-export function authButton() {}     // camelCase (금지)
+export function authButton() {} // camelCase (금지)
 ```
 
 ## 🔗 경로 별칭 (Path Aliases)
@@ -158,12 +158,12 @@ export function authButton() {}     // camelCase (금지)
 
 ```typescript
 // ✅ 경로 별칭 사용 (권장)
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/server'
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/server";
 
 // ❌ 상대 경로 사용 (금지)
-import { Button } from '../../../components/ui/button'
+import { Button } from "../../../components/ui/button";
 ```
 
 ## 📝 새 파일/폴더 추가 규칙
@@ -211,15 +211,15 @@ app/(marketing)/about/page.tsx
 
 ```typescript
 // 1. 외부 라이브러리
-import { Suspense } from 'react'
-import Link from 'next/link'
+import { Suspense } from "react";
+import Link from "next/link";
 
 // 2. 내부 라이브러리 (@/ 경로)
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 // 3. 상대 경로
-import './component.css'
+import "./component.css";
 ```
 
 ### 3. Export 규칙

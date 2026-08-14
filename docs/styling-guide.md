@@ -98,8 +98,8 @@ Prettier 플러그인이 자동으로 정렬하지만, 수동 작성 시 다음 
 ### 기본 사용법
 
 ```tsx
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // ✅ shadcn/ui 컴포넌트 활용
 export function UserCard({ user }) {
@@ -112,7 +112,7 @@ export function UserCard({ user }) {
         <Button variant="outline">프로필 보기</Button>
       </CardContent>
     </Card>
-  )
+  );
 }
 ```
 
@@ -137,21 +137,21 @@ export function UserCard({ user }) {
 ### 컴포넌트 커스터마이징
 
 ```tsx
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 // ✅ 기존 컴포넌트 확장
 export function CustomButton({ className, ...props }) {
   return (
     <Button
       className={cn(
-        'transition-all duration-200',
-        'hover:-translate-y-0.5 hover:shadow-lg',
-        className
+        "transition-all duration-200",
+        "hover:-translate-y-0.5 hover:shadow-lg",
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 // ❌ 처음부터 새로 만들기
@@ -161,7 +161,7 @@ export function MyButton({ className, ...props }) {
       className="bg-blue-500... px-4 py-2" // 긴 클래스 나열
       {...props}
     />
-  )
+  );
 }
 ```
 
@@ -194,7 +194,7 @@ import { ThemeProvider } from "next-themes";
   disableTransitionOnChange
 >
   {children}
-</ThemeProvider>
+</ThemeProvider>;
 ```
 
 ### 테마 전환 컴포넌트
@@ -219,7 +219,13 @@ const ThemeSwitcher = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm">
-          {theme === "light" ? <Sun /> : theme === "dark" ? <Moon /> : <Laptop />}
+          {theme === "light" ? (
+            <Sun />
+          ) : theme === "dark" ? (
+            <Moon />
+          ) : (
+            <Laptop />
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
