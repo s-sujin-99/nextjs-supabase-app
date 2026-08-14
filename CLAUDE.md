@@ -9,14 +9,19 @@ Supabase 공식 `with-supabase` Next.js 스타터 킷을 기반으로 한 프로
 ## 명령어
 
 ```bash
-npm run dev      # 개발 서버 (localhost:3000)
-npm run build    # 프로덕션 빌드
-npm run start    # 빌드된 앱 실행
-npm run lint     # ESLint (next/core-web-vitals + next/typescript)
+npm run dev            # 개발 서버 (localhost:3000)
+npm run build           # 프로덕션 빌드
+npm run start           # 빌드된 앱 실행
+npm run lint            # ESLint (next/core-web-vitals + next/typescript + prettier)
+npm run lint:fix        # ESLint 자동 수정
+npm run format           # Prettier로 전체 포맷
+npm run format:check    # Prettier 포맷 검사만 (수정 없음)
+npm run typecheck        # tsc --noEmit
 ```
 
 - 테스트 러너가 설정되어 있지 않습니다 (Jest/Vitest 등 미설치).
-- `package.json`에 `typecheck`/`check-all` 스크립트가 없습니다. 타입 체크가 필요하면 `npx tsc --noEmit`을 직접 실행하세요. (`docs/nextjs-16.md`가 `npm run typecheck`, `npm run check-all`을 언급하지만 실제로는 존재하지 않습니다 — 아래 "docs/ 폴더 주의사항" 참고.)
+- `check-all`처럼 위 검사들을 한 번에 묶어 실행하는 스크립트는 없습니다. 필요하면 위 명령어를 각각 실행하세요 (`docs/guides/nextjs-16.md`가 `npm run check-all`을 언급하지만 실제로는 존재하지 않습니다 — 아래 "docs/ 폴더 주의사항" 참고).
+- Husky + lint-staged가 커밋 시 자동으로 `eslint --fix`/`prettier --write`를 실행합니다 (`.husky/`, `package.json`의 `lint-staged` 설정).
 - 로컬 실행 전 `.env.local`에 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`가 설정되어 있어야 합니다. 없으면 `lib/utils.ts`의 `hasEnvVars`가 `false`가 되어 홈페이지가 "Connect Supabase" 안내 UI로 대체됩니다.
 
 ## 아키텍처
@@ -25,7 +30,7 @@ npm run lint     # ESLint (next/core-web-vitals + next/typescript)
 
 `app/`, `components/`, `lib/`가 프로젝트 루트에 바로 위치합니다 (`src/` 디렉토리 없음). `tsconfig.json`의 경로 별칭은 `@/*` → `./*` 하나뿐입니다. `components.json`(shadcn 설정)의 별칭도 이 구조를 기준으로 합니다.
 
-> ⚠️ `docs/project-structure.md`는 `src/app`, `src/components` 같은 `src/` 기반 구조를 설명하지만 실제 코드베이스와 다릅니다. 새 파일을 만들 때는 실제 구조(루트의 `app/`, `components/`, `lib/`)를 따르세요.
+> ⚠️ `docs/guides/project-structure.md`는 `src/app`, `src/components` 같은 `src/` 기반 구조를 설명하지만 실제 코드베이스와 다릅니다. 새 파일을 만들 때는 실제 구조(루트의 `app/`, `components/`, `lib/`)를 따르세요.
 
 ### Supabase 클라이언트 3분할 패턴
 
@@ -49,11 +54,11 @@ Next.js 16부터 `middleware.ts`/`middleware()`가 `proxy.ts`/`proxy()`로 이�
 
 ## docs/ 폴더 주의사항
 
-`docs/`에 한국어 가이드 문서(`project-structure.md`, `styling-guide.md`, `component-patterns.md`, `forms-react-hook-form.md`, `nextjs-16.md`)가 있습니다. 이 문서들은 이 프로젝트를 위해 작성되었지만 **일부 내용이 현재 코드베이스 상태와 어긋납니다**:
+`docs/guides/`에 한국어 가이드 문서(`project-structure.md`, `styling-guide.md`, `component-patterns.md`, `forms-react-hook-form.md`, `nextjs-16.md`)가 있습니다. 이 문서들은 이 프로젝트를 위해 작성되었지만 **일부 내용이 현재 코드베이스 상태와 어긋납니다**:
 
 - `project-structure.md`는 `src/` 레이아웃을 전제로 함 → 실제로는 루트 레이아웃 (위 참고)
 - `forms-react-hook-form.md`는 `react-hook-form`, `@hookform/resolvers`, `zod`가 "이미 설치됨"이라 적혀 있지만 `package.json`에 없음 — 폼 작업 시 실제로 설치되어 있는지 먼저 확인할 것
-- `nextjs-16.md`의 "코드 품질 체크리스트"가 언급하는 `npm run typecheck`/`npm run format:check`/`npm run check-all`은 `package.json`에 정의되어 있지 않음
+- `nextjs-16.md`의 "코드 품질 체크리스트"가 언급하는 `npm run check-all`은 `package.json`에 정의되어 있지 않음 (`typecheck`, `format:check`는 존재함)
 
 각 문서의 코드 패턴(Server/Client 컴포넌트 경계, cn() 사용법, App Router 규칙 등) 자체는 유효하지만, 특정 패키지/스크립트의 존재 여부는 실제 `package.json`과 대조해서 판단하세요.
 
