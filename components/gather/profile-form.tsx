@@ -18,7 +18,7 @@ function formatJoinedDate(isoDate: string) {
   }).format(new Date(isoDate));
 }
 
-// Task 008: Google OAuth 세션의 실제 사용자 정보로 교체, 이름 수정은 프로필 업데이트 API 연동 예정
+// Task 009/010: 이름 수정을 실제 프로필 업데이트 API와 연동 예정 (현재는 로컬 상태 + 토스트만 반영)
 export function ProfileForm({ user }: { user: GatherUser }) {
   const [name, setName] = useState(user.name);
   const [savedName, setSavedName] = useState(user.name);

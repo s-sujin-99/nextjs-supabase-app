@@ -1,7 +1,7 @@
 import { AdminSidebar } from "@/components/gather/admin-sidebar";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
-// Task 008: admin 권한 체크 미들웨어 연동 후 비인가 접근 차단 예정
+// admin 권한 체크는 proxy.ts(updateSession)에서 gather_is_admin() RPC로 처리됨
 export default function AdminDashboardLayout({
   children,
 }: {

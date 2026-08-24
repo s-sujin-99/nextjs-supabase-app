@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasEnvVars } from "../utils";
+import type { Database } from "./database.types";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -15,7 +16,7 @@ export async function updateSession(request: NextRequest) {
 
   // With Fluid compute, don't put this client in a global environment
   // variable. Always create a new one on each request.
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
@@ -46,17 +47,33 @@ export async function updateSession(request: NextRequest) {
   // with the Supabase client, your users may be randomly logged out.
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
+  const pathname = request.nextUrl.pathname;
+  const isAdminPath = pathname.startsWith("/admin");
+  const isPublicPath =
+    pathname === "/" ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/admin/login") ||
+    pathname.startsWith("/join");
 
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
+  if (!isPublicPath && !user) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    url.pathname = isAdminPath ? "/admin/login" : "/auth/login";
     return NextResponse.redirect(url);
+  }
+
+  // Gather 관리자 대시보드는 role: admin 프로필만 접근 가능.
+  // gather_is_admin()은 SECURITY DEFINER + auth.uid() 기반 RLS 헬퍼로,
+  // Task 007에서 anon/public 실행 권한을 명시적으로 회수해뒀다.
+  if (isAdminPath && !pathname.startsWith("/admin/login") && user) {
+    const { data: isAdmin } = await supabase.rpc("gather_is_admin");
+    if (!isAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/login";
+      url.searchParams.set("error", "forbidden");
+      return NextResponse.redirect(url);
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
