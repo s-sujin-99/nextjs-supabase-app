@@ -1,17 +1,27 @@
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { EventForm } from "@/components/gather/event-form";
-import { getMockEventById } from "@/lib/mock/gather";
+import { getCurrentUserId, getEventById } from "@/lib/supabase/gather-queries";
 import { toDatetimeLocalValue } from "@/lib/datetime";
 
-// Task 009: 이벤트 수정/삭제 API(F006) + 실제 주최자 권한 체크 연동 예정
 async function EditEventContent({
   params,
 }: {
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
-  const event = getMockEventById(eventId);
+  const [event, currentUserId] = await Promise.all([
+    getEventById(eventId),
+    getCurrentUserId(),
+  ]);
+
+  if (!event) {
+    notFound();
+  }
+  if (event.createdBy !== currentUserId) {
+    redirect(`/events/${eventId}`);
+  }
 
   return (
     <EventForm

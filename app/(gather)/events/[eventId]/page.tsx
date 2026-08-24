@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CalendarDays, MapPin, Users } from "lucide-react";
 
@@ -5,10 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { ParticipantCard } from "@/components/gather/participant-card";
 import { EventDetailActions } from "@/components/gather/event-detail-actions";
 import {
-  getMockEventById,
-  getMockParticipantsByEventId,
-  isEventHostedByCurrentUser,
-} from "@/lib/mock/gather";
+  getCurrentUserId,
+  getEventById,
+  getEventParticipants,
+} from "@/lib/supabase/gather-queries";
 import type { EventStatus } from "@/lib/types";
 
 const STATUS_LABEL: Record<EventStatus, string> = {
@@ -27,16 +28,24 @@ function formatEventDate(isoDate: string) {
   }).format(new Date(isoDate));
 }
 
-// Task 007/009: Supabase에서 이벤트/참여자 실데이터 조회 및 실시간 구독(F005)으로 교체 예정
+// Task 010: 실시간 참여자 목록 구독(F005)으로 교체 예정
 async function EventDetailContent({
   params,
 }: {
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
-  const event = getMockEventById(eventId);
-  const participants = getMockParticipantsByEventId(event.id);
-  const isHost = isEventHostedByCurrentUser(event);
+  const [event, participants, currentUserId] = await Promise.all([
+    getEventById(eventId),
+    getEventParticipants(eventId),
+    getCurrentUserId(),
+  ]);
+
+  if (!event) {
+    notFound();
+  }
+
+  const isHost = event.createdBy === currentUserId;
 
   return (
     <div className="flex flex-col gap-6">

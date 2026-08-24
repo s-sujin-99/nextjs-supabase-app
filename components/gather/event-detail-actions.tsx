@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { deleteEventAction } from "@/lib/actions/gather-events";
 
 interface EventDetailActionsProps {
   eventId: string;
@@ -51,8 +52,12 @@ export function EventDetailActions({
     toast.info("카카오톡 공유는 곧 지원될 예정이에요");
   };
 
-  const handleDelete = () => {
-    // Task 009: 이벤트 삭제 API 연동 예정
+  const handleDelete = async () => {
+    const result = await deleteEventAction(eventId);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
     toast.success(`"${eventTitle}" 이벤트를 삭제했어요`);
     router.push("/events");
   };

@@ -19,7 +19,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { MOCK_EVENTS } from "@/lib/mock/gather";
+import {
+  createEventAction,
+  updateEventAction,
+} from "@/lib/actions/gather-events";
+import { parseKstDatetimeLocal } from "@/lib/datetime";
 
 const eventFormSchema = z.object({
   title: z
@@ -59,6 +63,7 @@ export function EventForm({
   const [coverPreview, setCoverPreview] = useState<string | null>(
     defaultCoverImageUrl ?? null,
   );
+  const [coverFile, setCoverFile] = useState<File | null>(null);
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -73,19 +78,36 @@ export function EventForm({
 
   const handleCoverChange = (file: File | undefined) => {
     if (!file) return;
+    setCoverFile(file);
     setCoverPreview(URL.createObjectURL(file));
   };
 
-  const onSubmit = (values: EventFormValues) => {
-    // Task 009: Supabase Storage 업로드 + 이벤트 CRUD API 연동 예정
-    const targetEventId = mode === "create" ? MOCK_EVENTS[0].id : eventId;
-
-    if (mode === "create") {
-      toast.success(`"${values.title}" 이벤트가 생성되었어요`);
-    } else {
-      toast.success("이벤트 정보를 수정했어요");
+  const onSubmit = async (values: EventFormValues) => {
+    const formData = new FormData();
+    formData.set("title", values.title);
+    formData.set("description", values.description ?? "");
+    formData.set("eventDate", parseKstDatetimeLocal(values.eventDate));
+    formData.set("location", values.location);
+    if (coverFile) {
+      formData.set("cover", coverFile);
     }
-    router.push(`/events/${targetEventId}`);
+
+    const result =
+      mode === "create"
+        ? await createEventAction(formData)
+        : await updateEventAction(eventId!, formData);
+
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+
+    toast.success(
+      mode === "create"
+        ? `"${values.title}" 이벤트가 생성되었어요`
+        : "이벤트 정보를 수정했어요",
+    );
+    router.push(`/events/${result.eventId}`);
   };
 
   return (
