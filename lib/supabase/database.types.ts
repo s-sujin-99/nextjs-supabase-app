@@ -264,6 +264,95 @@ export type Database = {
           },
         ];
       };
+      gather_event_participants: {
+        Row: {
+          event_id: string;
+          id: string;
+          joined_at: string;
+          role: string;
+          user_id: string;
+        };
+        Insert: {
+          event_id: string;
+          id?: string;
+          joined_at?: string;
+          role?: string;
+          user_id: string;
+        };
+        Update: {
+          event_id?: string;
+          id?: string;
+          joined_at?: string;
+          role?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gather_event_participants_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "gather_events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "gather_event_participants_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      gather_events: {
+        Row: {
+          cover_image_url: string | null;
+          created_at: string;
+          created_by: string;
+          description: string | null;
+          event_date: string;
+          id: string;
+          invite_code: string;
+          location: string;
+          status: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          cover_image_url?: string | null;
+          created_at?: string;
+          created_by: string;
+          description?: string | null;
+          event_date: string;
+          id?: string;
+          invite_code?: string;
+          location: string;
+          status?: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          cover_image_url?: string | null;
+          created_at?: string;
+          created_by?: string;
+          description?: string | null;
+          event_date?: string;
+          id?: string;
+          invite_code?: string;
+          location?: string;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gather_events_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       group_members: {
         Row: {
           group_id: string;
@@ -404,6 +493,7 @@ export type Database = {
           email: string;
           full_name: string | null;
           id: string;
+          role: string;
           updated_at: string;
           username: string | null;
         };
@@ -413,6 +503,7 @@ export type Database = {
           email: string;
           full_name?: string | null;
           id: string;
+          role?: string;
           updated_at?: string;
           username?: string | null;
         };
@@ -422,6 +513,7 @@ export type Database = {
           email?: string;
           full_name?: string | null;
           id?: string;
+          role?: string;
           updated_at?: string;
           username?: string | null;
         };
@@ -535,20 +627,16 @@ export type Database = {
         Args: { p_description?: string; p_name: string };
         Returns: string;
       };
-      is_event_group_member: {
-        Args: { p_event_id: string };
-        Returns: boolean;
-      };
+      gather_is_admin: { Args: never; Returns: boolean };
+      gather_is_event_host: { Args: { p_event_id: string }; Returns: boolean };
+      is_event_group_member: { Args: { p_event_id: string }; Returns: boolean };
       is_event_group_organizer: {
         Args: { p_event_id: string };
         Returns: boolean;
       };
       is_group_member: { Args: { p_group_id: string }; Returns: boolean };
       is_group_organizer: { Args: { p_group_id: string }; Returns: boolean };
-      join_group_by_invite_code: {
-        Args: { p_code: string };
-        Returns: string;
-      };
+      join_group_by_invite_code: { Args: { p_code: string }; Returns: string };
       mark_settlement_share_paid: {
         Args: { p_is_paid: boolean; p_share_id: string };
         Returns: undefined;
