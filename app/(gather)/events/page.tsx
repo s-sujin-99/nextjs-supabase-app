@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/gather/event-card";
 import { EmptyState } from "@/components/gather/empty-state";
-import { MOCK_EVENTS } from "@/lib/mock/gather";
+import { getMyMockEvents } from "@/lib/mock/gather";
 import type { StatusFilterOption } from "@/lib/types";
 
 const FILTER_OPTIONS: StatusFilterOption[] = [
@@ -18,16 +18,17 @@ const FILTER_OPTIONS: StatusFilterOption[] = [
   { value: "ended", label: "종료" },
 ];
 
-// Task 007/009: Supabase에서 로그인한 주최자가 만든 이벤트만 조회하도록 교체 예정
+// Task 007/010: Supabase에서 로그인한 사용자가 주최했거나 참여한 이벤트를 조회하도록 교체 예정
 export default function MyEventsPage() {
   const [filter, setFilter] = useState<StatusFilterOption["value"]>("all");
+  const myEvents = useMemo(() => getMyMockEvents(), []);
 
   const filteredEvents = useMemo(
     () =>
       filter === "all"
-        ? MOCK_EVENTS
-        : MOCK_EVENTS.filter((event) => event.status === filter),
-    [filter],
+        ? myEvents
+        : myEvents.filter((event) => event.status === filter),
+    [myEvents, filter],
   );
 
   return (

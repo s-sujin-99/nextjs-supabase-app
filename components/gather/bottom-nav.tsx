@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { CalendarDays, Plus, User } from "lucide-react";
 
-// TODO(Task 004/005): 현재 경로 하이라이트, 주최자/참여자 뷰 분기 로직 추가 예정
+// Task 005: 이벤트 역할(host/participant)은 전역이 아닌 이벤트별 값이라 하단 내비게이션
+// 자체는 분기하지 않는다 — 참여자 전용 무네비 진입점은 /join/[code](레이아웃 밖 라우트)로 이미 분리되어 있다.
+// TODO(Task 008): 현재 경로 하이라이트 추가 예정
 export function BottomNav() {
   return (
     <nav className="fixed inset-x-0 bottom-0 flex h-16 items-center justify-around border-t bg-background sm:hidden">

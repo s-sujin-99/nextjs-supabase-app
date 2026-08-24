@@ -4,7 +4,11 @@ import { CalendarDays, MapPin, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ParticipantCard } from "@/components/gather/participant-card";
 import { EventDetailActions } from "@/components/gather/event-detail-actions";
-import { getMockEventById, MOCK_PARTICIPANTS } from "@/lib/mock/gather";
+import {
+  getMockEventById,
+  getMockParticipantsByEventId,
+  isEventHostedByCurrentUser,
+} from "@/lib/mock/gather";
 import type { EventStatus } from "@/lib/types";
 
 const STATUS_LABEL: Record<EventStatus, string> = {
@@ -31,6 +35,8 @@ async function EventDetailContent({
 }) {
   const { eventId } = await params;
   const event = getMockEventById(eventId);
+  const participants = getMockParticipantsByEventId(event.id);
+  const isHost = isEventHostedByCurrentUser(event);
 
   return (
     <div className="flex flex-col gap-6">
@@ -71,16 +77,16 @@ async function EventDetailContent({
         eventId={event.id}
         eventTitle={event.title}
         inviteCode={event.inviteCode}
-        isHost
+        isHost={isHost}
       />
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm font-medium">
           <Users className="size-4" />
-          참여자 {MOCK_PARTICIPANTS.length}명
+          참여자 {participants.length}명
         </div>
         <div className="flex flex-col gap-2">
-          {MOCK_PARTICIPANTS.map((participant) => (
+          {participants.map((participant) => (
             <ParticipantCard key={participant.id} participant={participant} />
           ))}
         </div>

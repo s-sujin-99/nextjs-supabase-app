@@ -23,7 +23,7 @@ interface EventDetailActionsProps {
   eventId: string;
   eventTitle: string;
   inviteCode: string;
-  /** 목 데이터 단계에서는 항상 true. Task 008 인증 연동 후 실제 권한으로 교체 예정 */
+  /** 주최자만 초대 링크 공유/수정/삭제 가능 (F002, F003, F006). 참여자는 읽기 전용 */
   isHost: boolean;
 }
 
@@ -57,6 +57,10 @@ export function EventDetailActions({
     router.push("/events");
   };
 
+  if (!isHost) {
+    return null;
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-3 gap-2">
@@ -71,37 +75,35 @@ export function EventDetailActions({
         </Button>
       </div>
 
-      {isHost ? (
-        <div className="flex gap-2">
-          <Button variant="secondary" className="flex-1" asChild>
-            <Link href={`/events/${eventId}/edit`}>
-              <Pencil /> 이벤트 수정
-            </Link>
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="flex-1">
-                <Trash2 /> 이벤트 삭제
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>이벤트를 삭제할까요?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  삭제하면 참여자 목록을 포함한 모든 정보가 사라지며 되돌릴 수
-                  없어요.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>취소</AlertDialogCancel>
-                <AlertDialogAction variant="destructive" onClick={handleDelete}>
-                  삭제
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      ) : null}
+      <div className="flex gap-2">
+        <Button variant="secondary" className="flex-1" asChild>
+          <Link href={`/events/${eventId}/edit`}>
+            <Pencil /> 이벤트 수정
+          </Link>
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" className="flex-1">
+              <Trash2 /> 이벤트 삭제
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>이벤트를 삭제할까요?</AlertDialogTitle>
+              <AlertDialogDescription>
+                삭제하면 참여자 목록을 포함한 모든 정보가 사라지며 되돌릴 수
+                없어요.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={handleDelete}>
+                삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }

@@ -7,7 +7,6 @@ import type {
   EventStatus,
   EventWithParticipants,
   GatherUser,
-  ParticipantRole,
   ParticipantWithUser,
 } from "@/lib/types";
 
@@ -41,6 +40,14 @@ export const MOCK_USERS: GatherUser[] = [
   },
 ];
 
+/**
+ * Task 008 이전까지는 실제 로그인 세션이 없으므로, 주최자 뷰(Task 004)와
+ * 참여자 뷰(Task 005)를 동시에 시연하기 위한 "현재 사용자" 고정값.
+ * event-1은 직접 주최하고, event-2/event-3에는 참여자로 등록되어 있으며,
+ * event-4는 아직 참여하지 않아 초대 링크 참여(F004) 흐름 시연에 쓰인다.
+ */
+export const MOCK_CURRENT_USER: GatherUser = MOCK_USERS[0];
+
 const EVENT_TEMPLATES: Array<{
   id: string;
   title: string;
@@ -58,7 +65,7 @@ const EVENT_TEMPLATES: Array<{
     location: "서울 마포구 연남동 파티룸",
     eventDate: "2026-09-05T19:00:00.000Z",
     status: "upcoming",
-    participantCount: 12,
+    participantCount: 3,
     hostIndex: 0,
   },
   {
@@ -68,7 +75,7 @@ const EVENT_TEMPLATES: Array<{
     location: "강남 스터디룸 3층",
     eventDate: "2026-08-24T10:00:00.000Z",
     status: "ongoing",
-    participantCount: 8,
+    participantCount: 3,
     hostIndex: 1,
   },
   {
@@ -78,8 +85,18 @@ const EVENT_TEMPLATES: Array<{
     location: "홍대 맛집거리",
     eventDate: "2026-07-20T12:00:00.000Z",
     status: "ended",
-    participantCount: 20,
+    participantCount: 3,
     hostIndex: 2,
+  },
+  {
+    id: "event-4",
+    title: "가을 보드게임 모임",
+    description: "신작 보드게임 같이 해봐요",
+    location: "잠실 보드게임 카페",
+    eventDate: "2026-10-18T13:00:00.000Z",
+    status: "upcoming",
+    participantCount: 2,
+    hostIndex: 1,
   },
 ];
 
@@ -104,18 +121,57 @@ export const MOCK_EVENTS: EventWithParticipants[] = EVENT_TEMPLATES.map(
   },
 );
 
-const PARTICIPANT_ROLES: ParticipantRole[] = ["host", "participant"];
-
-export const MOCK_PARTICIPANTS: ParticipantWithUser[] = MOCK_USERS.map(
-  (user, index) => ({
-    id: `participant-${index + 1}`,
-    eventId: MOCK_EVENTS[0].id,
+function buildParticipants(
+  eventId: string,
+  hostUser: GatherUser,
+  otherUsers: GatherUser[],
+): ParticipantWithUser[] {
+  return [hostUser, ...otherUsers].map((user, index) => ({
+    id: `${eventId}-participant-${index + 1}`,
+    eventId,
     userId: user.id,
-    role: PARTICIPANT_ROLES[index === 0 ? 0 : 1],
+    role: user.id === hostUser.id ? "host" : "participant",
     joinedAt: user.createdAt,
     user: { id: user.id, name: user.name, avatarUrl: user.avatarUrl },
-  }),
-);
+  }));
+}
+
+const [user1, user2, user3] = MOCK_USERS;
+
+/** 이벤트별 참여자 목록. 각 이벤트의 첫 번째 항목이 항상 주최자(host)다. */
+const EVENT_PARTICIPANTS: Record<string, ParticipantWithUser[]> = {
+  "event-1": buildParticipants("event-1", user1, [user2, user3]),
+  "event-2": buildParticipants("event-2", user2, [user1, user3]),
+  "event-3": buildParticipants("event-3", user3, [user1, user2]),
+  // event-4는 현재 사용자가 아직 참여하지 않은 상태(초대 링크 참여 흐름 시연용)
+  "event-4": buildParticipants("event-4", user2, [user3]),
+};
+
+export function getMockParticipantsByEventId(
+  eventId: string,
+): ParticipantWithUser[] {
+  return EVENT_PARTICIPANTS[eventId] ?? [];
+}
+
+export function isEventHostedByCurrentUser(
+  event: Pick<EventWithParticipants, "createdBy">,
+): boolean {
+  return event.createdBy === MOCK_CURRENT_USER.id;
+}
+
+export function hasCurrentUserJoined(eventId: string): boolean {
+  return getMockParticipantsByEventId(eventId).some(
+    (participant) => participant.userId === MOCK_CURRENT_USER.id,
+  );
+}
+
+/** 내가 주최했거나 참여한 이벤트만 모은 목록 (F007 "내 이벤트 목록"). */
+export function getMyMockEvents(): EventWithParticipants[] {
+  return MOCK_EVENTS.filter(
+    (event) =>
+      isEventHostedByCurrentUser(event) || hasCurrentUserJoined(event.id),
+  );
+}
 
 /**
  * Task 007 이전까지는 실제 DB 조회가 없으므로, 존재하지 않는 id로 접근해도
@@ -123,4 +179,13 @@ export const MOCK_PARTICIPANTS: ParticipantWithUser[] = MOCK_USERS.map(
  */
 export function getMockEventById(eventId: string): EventWithParticipants {
   return MOCK_EVENTS.find((event) => event.id === eventId) ?? MOCK_EVENTS[0];
+}
+
+/** 초대 코드로 이벤트를 찾는다. 존재하지 않는 코드는 undefined를 반환한다(F004 유효성 검사용). */
+export function getMockEventByInviteCode(
+  inviteCode: string,
+): EventWithParticipants | undefined {
+  return MOCK_EVENTS.find(
+    (event) => event.inviteCode.toLowerCase() === inviteCode.toLowerCase(),
+  );
 }
