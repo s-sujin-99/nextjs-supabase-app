@@ -6,9 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { JoinButton } from "@/components/gather/join-button";
 import {
-  getMockEventByInviteCode,
-  hasCurrentUserJoined,
-} from "@/lib/mock/gather";
+  getCurrentUserId,
+  getEventPreviewByInviteCode,
+  hasUserJoinedEvent,
+} from "@/lib/supabase/gather-queries";
 
 function formatEventDate(isoDate: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -20,10 +21,12 @@ function formatEventDate(isoDate: string) {
   }).format(new Date(isoDate));
 }
 
-// Task 009/010: 실제 초대 코드 조회 + 로그인 후 자동 참여(F004) 연동 예정
 async function JoinContent({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  const event = getMockEventByInviteCode(code);
+  const [event, currentUserId] = await Promise.all([
+    getEventPreviewByInviteCode(code),
+    getCurrentUserId(),
+  ]);
 
   if (!event) {
     return (
@@ -36,7 +39,9 @@ async function JoinContent({ params }: { params: Promise<{ code: string }> }) {
     );
   }
 
-  const alreadyJoined = hasCurrentUserJoined(event.id);
+  const alreadyJoined = currentUserId
+    ? await hasUserJoinedEvent(event.id, currentUserId)
+    : false;
 
   return (
     <div className="flex w-full flex-col gap-5">
@@ -89,7 +94,11 @@ async function JoinContent({ params }: { params: Promise<{ code: string }> }) {
           </Button>
         </div>
       ) : (
-        <JoinButton eventId={event.id} eventTitle={event.title} />
+        <JoinButton
+          inviteCode={code}
+          eventTitle={event.title}
+          isLoggedIn={!!currentUserId}
+        />
       )}
     </div>
   );

@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { CalendarDays, MapPin, Users } from "lucide-react";
+import { CalendarDays, MapPin } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { ParticipantCard } from "@/components/gather/participant-card";
+import { LiveParticipantList } from "@/components/gather/live-participant-list";
 import { EventDetailActions } from "@/components/gather/event-detail-actions";
 import {
   getCurrentUserId,
@@ -28,7 +28,6 @@ function formatEventDate(isoDate: string) {
   }).format(new Date(isoDate));
 }
 
-// Task 010: 실시간 참여자 목록 구독(F005)으로 교체 예정
 async function EventDetailContent({
   params,
 }: {
@@ -89,17 +88,10 @@ async function EventDetailContent({
         isHost={isHost}
       />
 
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <Users className="size-4" />
-          참여자 {participants.length}명
-        </div>
-        <div className="flex flex-col gap-2">
-          {participants.map((participant) => (
-            <ParticipantCard key={participant.id} participant={participant} />
-          ))}
-        </div>
-      </div>
+      <LiveParticipantList
+        eventId={event.id}
+        initialParticipants={participants}
+      />
     </div>
   );
 }

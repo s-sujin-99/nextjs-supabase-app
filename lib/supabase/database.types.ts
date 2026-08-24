@@ -627,8 +627,27 @@ export type Database = {
         Args: { p_description?: string; p_name: string };
         Returns: string;
       };
+      gather_get_event_preview: {
+        Args: { p_invite_code: string };
+        Returns: {
+          cover_image_url: string;
+          description: string;
+          event_date: string;
+          host_avatar_url: string;
+          host_id: string;
+          host_name: string;
+          id: string;
+          invite_code: string;
+          location: string;
+          title: string;
+        }[];
+      };
       gather_is_admin: { Args: never; Returns: boolean };
       gather_is_event_host: { Args: { p_event_id: string }; Returns: boolean };
+      gather_shares_event_with: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
       is_event_group_member: { Args: { p_event_id: string }; Returns: boolean };
       is_event_group_organizer: {
         Args: { p_event_id: string };
