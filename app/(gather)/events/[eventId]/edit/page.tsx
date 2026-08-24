@@ -1,14 +1,31 @@
 import { Suspense } from "react";
 
-// Task 004: 이벤트 수정 폼 구현 예정 (F006, F009) - 주최자만 접근 가능
+import { EventForm } from "@/components/gather/event-form";
+import { getMockEventById } from "@/lib/mock/gather";
+import { toDatetimeLocalValue } from "@/lib/datetime";
+
+// Task 009: 이벤트 수정/삭제 API(F006) + 실제 주최자 권한 체크 연동 예정
 async function EditEventContent({
   params,
 }: {
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
+  const event = getMockEventById(eventId);
 
-  return <p className="text-sm text-muted-foreground">이벤트 ID: {eventId}</p>;
+  return (
+    <EventForm
+      mode="edit"
+      eventId={event.id}
+      defaultCoverImageUrl={event.coverImageUrl}
+      defaultValues={{
+        title: event.title,
+        description: event.description ?? "",
+        eventDate: toDatetimeLocalValue(event.eventDate),
+        location: event.location,
+      }}
+    />
+  );
 }
 
 export default function EditEventPage({

@@ -116,3 +116,11 @@ export const MOCK_PARTICIPANTS: ParticipantWithUser[] = MOCK_USERS.map(
     user: { id: user.id, name: user.name, avatarUrl: user.avatarUrl },
   }),
 );
+
+/**
+ * Task 007 이전까지는 실제 DB 조회가 없으므로, 존재하지 않는 id로 접근해도
+ * 화면이 비어 보이지 않도록 첫 번째 목 이벤트로 대체한다.
+ */
+export function getMockEventById(eventId: string): EventWithParticipants {
+  return MOCK_EVENTS.find((event) => event.id === eventId) ?? MOCK_EVENTS[0];
+}
