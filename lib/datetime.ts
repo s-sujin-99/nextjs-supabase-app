@@ -12,6 +12,28 @@ export function toDatetimeLocalValue(isoDate: string) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+// 한국 표준시(+09:00) 기준 "YYYY-MM-DD" 날짜 키. 서버 실행 환경의 로컬 타임존에
+// 의존하지 않고 KST 달력 기준 날짜/주/월 경계를 계산할 때 공통으로 사용한다.
+export function toKstDateKey(date: Date) {
+  return new Date(date.getTime() + 9 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+// KST 기준 해당 날짜가 속한 주(월요일 시작)의 시작일 키.
+export function toKstWeekStartKey(date: Date) {
+  const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const day = kst.getUTCDay();
+  const diffToMonday = day === 0 ? 6 : day - 1;
+  kst.setUTCDate(kst.getUTCDate() - diffToMonday);
+  return kst.toISOString().slice(0, 10);
+}
+
+// KST 기준 "YYYY-MM" 월 키.
+export function toKstMonthKey(date: Date) {
+  return toKstDateKey(date).slice(0, 7);
+}
+
 // F008: 이벤트 상태 자동 관리. 별도의 종료 일시가 없는 단일 일정 이벤트이므로,
 // 백그라운드 크론 없이도 항상 최신 상태가 보장되도록 event_date와 오늘(KST) 날짜를
 // 읽는 시점마다 비교해 계산한다. DB의 status 컬럼은 삽입 시 기본값만 채워질 뿐
@@ -19,9 +41,6 @@ export function toDatetimeLocalValue(isoDate: string) {
 export function getEventStatus(
   eventDateIso: string,
 ): "upcoming" | "ongoing" | "ended" {
-  const toKstDateKey = (date: Date) =>
-    new Date(date.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
   const todayKey = toKstDateKey(new Date());
   const eventKey = toKstDateKey(new Date(eventDateIso));
 

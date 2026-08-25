@@ -19,14 +19,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getMockAnalyticsData } from "@/lib/mock/admin";
-import type { AnalyticsRange } from "@/lib/types";
+import { toKstDateKey } from "@/lib/datetime";
+import type {
+  AdminAnalyticsRawData,
+  AnalyticsDataPoint,
+  AnalyticsRange,
+} from "@/lib/types";
 
 const RANGE_OPTIONS: Array<{ value: AnalyticsRange; label: string }> = [
   { value: "7d", label: "최근 7일" },
   { value: "30d", label: "최근 30일" },
   { value: "90d", label: "최근 90일" },
 ];
+
+const RANGE_DAYS: Record<AnalyticsRange, number> = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+};
 
 function formatAxisDate(date: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -35,19 +45,48 @@ function formatAxisDate(date: string) {
   }).format(new Date(date));
 }
 
-export function AdminAnalyticsCharts() {
+/** 생성일시 목록을 오늘 기준 최근 N일간 날짜별 개수로 집계한다. */
+function bucketByDay(dates: string[], days: number): AnalyticsDataPoint[] {
+  const countByKey = new Map<string, number>();
+  for (const iso of dates) {
+    const key = toKstDateKey(new Date(iso));
+    countByKey.set(key, (countByKey.get(key) ?? 0) + 1);
+  }
+
+  const today = new Date();
+  return Array.from({ length: days }, (_, i) => {
+    const date = new Date(today);
+    date.setDate(date.getDate() - (days - 1 - i));
+    const key = toKstDateKey(date);
+    return { date: key, count: countByKey.get(key) ?? 0 };
+  });
+}
+
+export function AdminAnalyticsCharts({
+  data,
+}: {
+  data: AdminAnalyticsRawData;
+}) {
   const [range, setRange] = useState<AnalyticsRange>("7d");
-  const data = useMemo(() => getMockAnalyticsData(range), [range]);
+  const days = RANGE_DAYS[range];
+  const eventTrend = useMemo(
+    () => bucketByDay(data.eventDates, days),
+    [data.eventDates, days],
+  );
+  const userTrend = useMemo(
+    () => bucketByDay(data.userDates, days),
+    [data.userDates, days],
+  );
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div className="grid grid-cols-3 gap-4">
-          <SummaryCard label="총 이벤트 수" value={data.summary.totalEvents} />
-          <SummaryCard label="총 사용자 수" value={data.summary.totalUsers} />
+          <SummaryCard label="총 이벤트 수" value={data.totalEvents} />
+          <SummaryCard label="총 사용자 수" value={data.totalUsers} />
           <SummaryCard
             label="평균 참여자 수"
-            value={data.summary.averageParticipants}
+            value={data.averageParticipants}
           />
         </div>
         <Select
@@ -67,8 +106,8 @@ export function AdminAnalyticsCharts() {
         </Select>
       </div>
 
-      <TrendChart title="이벤트 생성 추이" points={data.eventTrend} />
-      <TrendChart title="사용자 증가 추이" points={data.userTrend} />
+      <TrendChart title="이벤트 생성 추이" points={eventTrend} />
+      <TrendChart title="사용자 증가 추이" points={userTrend} />
     </div>
   );
 }

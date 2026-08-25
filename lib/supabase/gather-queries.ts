@@ -5,8 +5,17 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { getEventStatus } from "@/lib/datetime";
+import {
+  getEventStatus,
+  toKstDateKey,
+  toKstMonthKey,
+  toKstWeekStartKey,
+} from "@/lib/datetime";
 import type {
+  AdminAnalyticsRawData,
+  AdminEventRow,
+  AdminUserRow,
+  DashboardStats,
   EventWithParticipants,
   ParticipantRole,
   ParticipantWithUser,
@@ -208,4 +217,163 @@ export async function getEventParticipants(
         avatarUrl: row.user!.avatar_url,
       },
     }));
+}
+
+/**
+ * Task 011: 관리자 대시보드(F012~F015) 조회 레이어.
+ * profiles의 관리자 전체 조회 RLS(gather_profiles_select_admin)에 의존하므로,
+ * admin role이 아닌 사용자가 호출하면 빈 배열/0으로 채워진 값이 반환된다
+ * (에러가 아니라 RLS가 조용히 행을 걸러내는 정상 동작).
+ */
+
+type AdminEventQueryRow = {
+  id: string;
+  title: string;
+  event_date: string;
+  created_at: string;
+  host: { full_name: string | null } | null;
+  participants: { count: number }[];
+};
+
+const ADMIN_EVENT_SELECT =
+  "id, title, event_date, created_at, host:profiles!gather_events_created_by_fkey(full_name), participants:gather_event_participants(count)";
+
+/** 이벤트 관리 테이블(F013)용 전체 이벤트 목록. 검색/필터/정렬/페이지네이션은
+ * 소규모 데이터셋 전제하에 AdminEventsTable에서 클라이언트 사이드로 처리한다. */
+export async function getAdminEvents(): Promise<AdminEventRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("gather_events")
+    .select(ADMIN_EVENT_SELECT)
+    .order("event_date", { ascending: false });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return (data as AdminEventQueryRow[]).map((row) => ({
+    id: row.id,
+    title: row.title,
+    hostName: row.host?.full_name ?? "이름 없음",
+    eventDate: row.event_date,
+    participantCount: row.participants[0]?.count ?? 0,
+    status: getEventStatus(row.event_date),
+    createdAt: row.created_at,
+  }));
+}
+
+/** 사용자 관리 테이블(F014)용 전체 사용자 목록 + 생성/참여 이벤트 수. */
+export async function getAdminUsers(): Promise<AdminUserRow[]> {
+  const supabase = await createClient();
+  const [
+    { data: users, error: usersError },
+    { data: hostedRows },
+    { data: participantRows },
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name, email, avatar_url, role, created_at")
+      .order("created_at", { ascending: false }),
+    supabase.from("gather_events").select("created_by"),
+    supabase.from("gather_event_participants").select("user_id, role"),
+  ]);
+
+  if (usersError || !users) {
+    return [];
+  }
+
+  const hostedCountMap = new Map<string, number>();
+  for (const row of hostedRows ?? []) {
+    hostedCountMap.set(
+      row.created_by,
+      (hostedCountMap.get(row.created_by) ?? 0) + 1,
+    );
+  }
+
+  // 주최자도 host role로 gather_event_participants에 등록되므로(Task 009),
+  // participant role만 세면 "만든 이벤트를 제외한 참여 이벤트 수"가 된다.
+  const joinedCountMap = new Map<string, number>();
+  for (const row of participantRows ?? []) {
+    if (row.role !== "participant") continue;
+    joinedCountMap.set(row.user_id, (joinedCountMap.get(row.user_id) ?? 0) + 1);
+  }
+
+  return users.map((user) => ({
+    id: user.id,
+    name: user.full_name ?? user.email,
+    email: user.email,
+    avatarUrl: user.avatar_url,
+    role: user.role === "admin" ? "admin" : "user",
+    createdAt: user.created_at,
+    eventsCreatedCount: hostedCountMap.get(user.id) ?? 0,
+    eventsJoinedCount: joinedCountMap.get(user.id) ?? 0,
+  }));
+}
+
+/** 대시보드 지표(F012). "오늘/이번 주/이번 달"은 KST 달력 기준으로 판단한다. */
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const supabase = await createClient();
+  const [{ data: events }, { data: users }] = await Promise.all([
+    supabase.from("gather_events").select("created_at"),
+    supabase.from("profiles").select("created_at"),
+  ]);
+
+  const now = new Date();
+  const todayKey = toKstDateKey(now);
+  const weekStartKey = toKstWeekStartKey(now);
+  const monthKey = toKstMonthKey(now);
+
+  const eventDates = (events ?? []).map((row) => row.created_at);
+  const userDates = (users ?? []).map((row) => row.created_at);
+
+  return {
+    events: {
+      today: eventDates.filter((d) => toKstDateKey(new Date(d)) === todayKey)
+        .length,
+      thisWeek: eventDates.filter(
+        (d) => toKstWeekStartKey(new Date(d)) === weekStartKey,
+      ).length,
+      thisMonth: eventDates.filter(
+        (d) => toKstMonthKey(new Date(d)) === monthKey,
+      ).length,
+      total: eventDates.length,
+    },
+    users: {
+      today: userDates.filter((d) => toKstDateKey(new Date(d)) === todayKey)
+        .length,
+      thisWeek: userDates.filter(
+        (d) => toKstWeekStartKey(new Date(d)) === weekStartKey,
+      ).length,
+      total: userDates.length,
+    },
+  };
+}
+
+/** 통계 분석 페이지(F015)용 원본 데이터. 날짜별 집계는 클라이언트에서 range에
+ * 맞춰 계산하므로(AdminAnalyticsCharts), 여기서는 원시 생성일시만 반환한다. */
+export async function getAdminAnalyticsRawData(): Promise<AdminAnalyticsRawData> {
+  const supabase = await createClient();
+  const [{ data: events }, { data: users }, { count: participantCount }] =
+    await Promise.all([
+      supabase.from("gather_events").select("created_at"),
+      supabase.from("profiles").select("created_at"),
+      supabase
+        .from("gather_event_participants")
+        .select("id", { count: "exact", head: true }),
+    ]);
+
+  const totalEvents = events?.length ?? 0;
+  const totalUsers = users?.length ?? 0;
+  const averageParticipants =
+    totalEvents === 0
+      ? 0
+      : Math.round(((participantCount ?? 0) / totalEvents) * 10) / 10;
+
+  return {
+    eventDates: (events ?? []).map((row) => row.created_at),
+    userDates: (users ?? []).map((row) => row.created_at),
+    totalEvents,
+    totalUsers,
+    averageParticipants,
+  };
 }

@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { deleteUserAction } from "@/lib/actions/gather-admin";
 import type { AdminUserRow, UserRole } from "@/lib/types";
 
 const ROLE_LABEL: Record<UserRole, string> = {
@@ -113,8 +114,12 @@ export function AdminUsersTable({
     setPage(1);
   };
 
-  const handleDelete = (user: AdminUserRow) => {
-    // Task 011: 사용자 삭제 API 연동 예정
+  const handleDelete = async (user: AdminUserRow) => {
+    const result = await deleteUserAction(user.id);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
     setUsers((prev) => prev.filter((u) => u.id !== user.id));
     toast.success(`${user.name}님을 삭제했어요`);
   };
@@ -237,7 +242,8 @@ export function AdminUsersTable({
                             {user.name}님을 삭제할까요?
                           </AlertDialogTitle>
                           <AlertDialogDescription>
-                            삭제하면 되돌릴 수 없어요.
+                            삭제하면 되돌릴 수 없어요. 이 사용자가 만든 이벤트와
+                            참여 기록도 함께 삭제돼요.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

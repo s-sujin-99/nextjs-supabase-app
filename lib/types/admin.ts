@@ -64,3 +64,13 @@ export interface AnalyticsData {
     averageParticipants: number;
   };
 }
+
+/** 통계 분석 페이지(F015)가 서버에서 한 번만 받아오는 원본 데이터.
+ * range 전환 시 재요청 없이 클라이언트에서 날짜별로 집계한다. */
+export interface AdminAnalyticsRawData {
+  eventDates: string[];
+  userDates: string[];
+  totalEvents: number;
+  totalUsers: number;
+  averageParticipants: number;
+}

@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { deleteEventAction } from "@/lib/actions/gather-events";
 import type {
   AdminEventRow,
   EventStatus,
@@ -115,8 +116,12 @@ export function AdminEventsTable({
     setPage(1);
   };
 
-  const handleDelete = (event: AdminEventRow) => {
-    // Task 011: 이벤트 삭제 API 연동 예정
+  const handleDelete = async (event: AdminEventRow) => {
+    const result = await deleteEventAction(event.id);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
     setEvents((prev) => prev.filter((e) => e.id !== event.id));
     toast.success(`"${event.title}" 이벤트를 삭제했어요`);
   };
