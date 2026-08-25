@@ -1,20 +1,27 @@
 import { Suspense } from "react";
 
-import { MyEventsView } from "@/components/gather/my-events-view";
+import { EventsView } from "@/components/gather/events-view";
 import { EventListSkeleton } from "@/components/gather/loading-skeleton";
-import { getCurrentUserId, getMyEvents } from "@/lib/supabase/gather-queries";
+import {
+  getAllEvents,
+  getCurrentUserId,
+  getMyEvents,
+} from "@/lib/supabase/gather-queries";
 
-async function MyEventsContent() {
+async function EventsContent() {
   const userId = await getCurrentUserId();
-  const events = userId ? await getMyEvents(userId) : [];
+  const [myEvents, allEvents] = await Promise.all([
+    userId ? getMyEvents(userId) : Promise.resolve([]),
+    getAllEvents(),
+  ]);
 
-  return <MyEventsView initialEvents={events} />;
+  return <EventsView myEvents={myEvents} allEvents={allEvents} />;
 }
 
-export default function MyEventsPage() {
+export default function EventsPage() {
   return (
     <Suspense fallback={<EventListSkeleton />}>
-      <MyEventsContent />
+      <EventsContent />
     </Suspense>
   );
 }

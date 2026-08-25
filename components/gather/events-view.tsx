@@ -17,24 +17,37 @@ const FILTER_OPTIONS: StatusFilterOption[] = [
   { value: "ended", label: "종료" },
 ];
 
-export function MyEventsView({
-  initialEvents,
+type Scope = "mine" | "all";
+
+export function EventsView({
+  myEvents,
+  allEvents,
 }: {
-  initialEvents: EventWithParticipants[];
+  myEvents: EventWithParticipants[];
+  allEvents: EventWithParticipants[];
 }) {
+  const [scope, setScope] = useState<Scope>("mine");
   const [filter, setFilter] = useState<StatusFilterOption["value"]>("all");
 
+  const sourceEvents = scope === "mine" ? myEvents : allEvents;
   const filteredEvents = useMemo(
     () =>
       filter === "all"
-        ? initialEvents
-        : initialEvents.filter((event) => event.status === filter),
-    [initialEvents, filter],
+        ? sourceEvents
+        : sourceEvents.filter((event) => event.status === filter),
+    [sourceEvents, filter],
   );
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">내 이벤트</h1>
+      <h1 className="text-2xl font-semibold">이벤트</h1>
+
+      <Tabs value={scope} onValueChange={(value) => setScope(value as Scope)}>
+        <TabsList>
+          <TabsTrigger value="mine">내 이벤트</TabsTrigger>
+          <TabsTrigger value="all">전체 이벤트</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <Tabs
         value={filter}
@@ -64,13 +77,19 @@ export function MyEventsView({
       ) : (
         <EmptyState
           title="표시할 이벤트가 없어요"
-          description="새 이벤트를 만들어 참여자를 초대해보세요."
+          description={
+            scope === "mine"
+              ? "새 이벤트를 만들어 참여자를 초대해보세요."
+              : "아직 등록된 이벤트가 없어요."
+          }
           action={
-            <Button asChild>
-              <Link href="/events/new">
-                <Plus /> 새 이벤트 만들기
-              </Link>
-            </Button>
+            scope === "mine" ? (
+              <Button asChild>
+                <Link href="/events/new">
+                  <Plus /> 새 이벤트 만들기
+                </Link>
+              </Button>
+            ) : undefined
           }
         />
       )}

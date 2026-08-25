@@ -6,6 +6,7 @@ import { CalendarDays, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { LiveParticipantList } from "@/components/gather/live-participant-list";
 import { EventDetailActions } from "@/components/gather/event-detail-actions";
+import { JoinButton } from "@/components/gather/join-button";
 import { EventDetailSkeleton } from "@/components/gather/loading-skeleton";
 import {
   getCurrentUserId,
@@ -47,6 +48,9 @@ async function EventDetailContent({
   }
 
   const isHost = event.createdBy === currentUserId;
+  const isParticipant = participants.some(
+    (participant) => participant.userId === currentUserId,
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -91,6 +95,14 @@ async function EventDetailContent({
         inviteCode={event.inviteCode}
         isHost={isHost}
       />
+
+      {!isHost && !isParticipant ? (
+        <JoinButton
+          inviteCode={event.inviteCode}
+          eventTitle={event.title}
+          isLoggedIn={!!currentUserId}
+        />
+      ) : null}
 
       <LiveParticipantList
         eventId={event.id}

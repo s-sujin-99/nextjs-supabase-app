@@ -75,21 +75,74 @@ export async function getCurrentUserId(): Promise<string | null> {
   return data?.claims.sub ?? null;
 }
 
+type EventWithHostRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string;
+  event_date: string;
+  cover_image_url: string | null;
+  invite_code: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  host_id: string;
+  host_name: string | null;
+  host_avatar_url: string | null;
+  participant_count: number;
+};
+
+function mapEventWithHostRow(row: EventWithHostRow): EventWithParticipants {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    location: row.location,
+    eventDate: row.event_date,
+    coverImageUrl: row.cover_image_url,
+    inviteCode: row.invite_code,
+    status: getEventStatus(row.event_date),
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    participantCount: Number(row.participant_count ?? 0),
+    host: {
+      id: row.host_id,
+      name: row.host_name ?? "이름 없음",
+      avatarUrl: row.host_avatar_url,
+    },
+  };
+}
+
+/** 전체 이벤트 목록("전체 이벤트" 탭). gather_events/gather_event_participants는 이미
+ * 전체 열람 RLS(USING (true))이지만, host 프로필은 이벤트를 공유하는 사용자끼리만
+ * 보이므로(gather_shares_event_with) SECURITY DEFINER RPC로 host 정보까지 채운다. */
+export async function getAllEvents(): Promise<EventWithParticipants[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("gather_list_events_with_host");
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map(mapEventWithHostRow);
+}
+
+/** 이벤트 상세(F007). RPC를 쓰는 이유는 위 getAllEvents와 동일 — 호스트/참여자뿐
+ * 아니라 참여하지 않은 사용자도 이 이벤트를 읽기 전용으로 볼 수 있어야 한다. */
 export async function getEventById(
   eventId: string,
 ): Promise<EventWithParticipants | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("gather_events")
-    .select(EVENT_SELECT)
-    .eq("id", eventId)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("gather_get_event_by_id", {
+    p_event_id: eventId,
+  });
 
-  if (error || !data) {
+  if (error || !data || data.length === 0) {
     return null;
   }
 
-  return mapEventRow(data);
+  return mapEventWithHostRow(data[0]);
 }
 
 export async function getEventByInviteCode(
@@ -191,32 +244,26 @@ export async function getEventParticipants(
   eventId: string,
 ): Promise<ParticipantWithUser[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("gather_event_participants")
-    .select(
-      "id, event_id, user_id, role, joined_at, user:profiles!gather_event_participants_user_id_fkey(id, full_name, avatar_url)",
-    )
-    .eq("event_id", eventId)
-    .order("joined_at", { ascending: true });
+  const { data, error } = await supabase.rpc("gather_get_event_participants", {
+    p_event_id: eventId,
+  });
 
   if (error || !data) {
     return [];
   }
 
-  return data
-    .filter((row) => row.user)
-    .map((row) => ({
-      id: row.id,
-      eventId: row.event_id,
-      userId: row.user_id,
-      role: row.role as ParticipantRole,
-      joinedAt: row.joined_at,
-      user: {
-        id: row.user!.id,
-        name: row.user!.full_name ?? "이름 없음",
-        avatarUrl: row.user!.avatar_url,
-      },
-    }));
+  return data.map((row) => ({
+    id: row.id,
+    eventId: row.event_id,
+    userId: row.user_id,
+    role: row.role as ParticipantRole,
+    joinedAt: row.joined_at,
+    user: {
+      id: row.user_id,
+      name: row.user_name ?? "이름 없음",
+      avatarUrl: row.user_avatar_url,
+    },
+  }));
 }
 
 /**

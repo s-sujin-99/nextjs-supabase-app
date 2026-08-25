@@ -627,6 +627,37 @@ export type Database = {
         Args: { p_description?: string; p_name: string };
         Returns: string;
       };
+      gather_get_event_by_id: {
+        Args: { p_event_id: string };
+        Returns: {
+          cover_image_url: string;
+          created_at: string;
+          created_by: string;
+          description: string;
+          event_date: string;
+          host_avatar_url: string;
+          host_id: string;
+          host_name: string;
+          id: string;
+          invite_code: string;
+          location: string;
+          participant_count: number;
+          title: string;
+          updated_at: string;
+        }[];
+      };
+      gather_get_event_participants: {
+        Args: { p_event_id: string };
+        Returns: {
+          event_id: string;
+          id: string;
+          joined_at: string;
+          role: string;
+          user_avatar_url: string;
+          user_id: string;
+          user_name: string;
+        }[];
+      };
       gather_get_event_preview: {
         Args: { p_invite_code: string };
         Returns: {
@@ -644,6 +675,25 @@ export type Database = {
       };
       gather_is_admin: { Args: never; Returns: boolean };
       gather_is_event_host: { Args: { p_event_id: string }; Returns: boolean };
+      gather_list_events_with_host: {
+        Args: never;
+        Returns: {
+          cover_image_url: string;
+          created_at: string;
+          created_by: string;
+          description: string;
+          event_date: string;
+          host_avatar_url: string;
+          host_id: string;
+          host_name: string;
+          id: string;
+          invite_code: string;
+          location: string;
+          participant_count: number;
+          title: string;
+          updated_at: string;
+        }[];
+      };
       gather_shares_event_with: {
         Args: { p_user_id: string };
         Returns: boolean;
