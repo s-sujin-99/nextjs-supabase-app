@@ -163,13 +163,13 @@ Gather는 5-30명 규모의 소규모 이벤트 주최자와 참여자를 위한
   - ✅ 터치 영역 최적화 (모바일 48px 이상)
   - ✅ 무한 스크롤 또는 가상화 리스트 구현
 
-- **Task 014: 성능 최적화 및 SEO**
-  - 이미지 최적화 (next/image, webp 포맷)
-  - 코드 스플리팅 최적화
-  - Supabase 쿼리 최적화 (select 최소화, JOIN 최적화)
-  - 메타 태그 및 Open Graph 설정
-  - robots.txt 및 sitemap.xml 생성
-  - Lighthouse 점수 90+ 달성
+- **Task 014: 성능 최적화 및 SEO** ✅ - 완료
+  - ✅ 이미지 최적화 (next/image, webp 포맷)
+  - ✅ 코드 스플리팅 최적화
+  - ✅ Supabase 쿼리 최적화 (select 최소화, JOIN 최적화)
+  - ✅ 메타 태그 및 Open Graph 설정
+  - ✅ robots.txt 및 sitemap.xml 생성
+  - ✅ Lighthouse 점수 90+ 달성
 
 - **Task 015: 배포 및 모니터링**
   - Vercel 프로젝트 설정 및 환경 변수 구성
