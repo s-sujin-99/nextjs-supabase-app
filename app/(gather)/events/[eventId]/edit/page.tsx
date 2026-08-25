@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { EventForm } from "@/components/gather/event-form";
+import { EventFormSkeleton } from "@/components/gather/loading-skeleton";
 import { getCurrentUserId, getEventById } from "@/lib/supabase/gather-queries";
 import { toDatetimeLocalValue } from "@/lib/datetime";
 
@@ -46,11 +47,7 @@ export default function EditEventPage({
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">이벤트 수정</h1>
-      <Suspense
-        fallback={
-          <p className="text-sm text-muted-foreground">불러오는 중...</p>
-        }
-      >
+      <Suspense fallback={<EventFormSkeleton />}>
         <EditEventContent params={params} />
       </Suspense>
     </div>

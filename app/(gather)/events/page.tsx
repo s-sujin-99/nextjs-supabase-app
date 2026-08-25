@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { MyEventsView } from "@/components/gather/my-events-view";
+import { EventListSkeleton } from "@/components/gather/loading-skeleton";
 import { getCurrentUserId, getMyEvents } from "@/lib/supabase/gather-queries";
 
 async function MyEventsContent() {
@@ -12,9 +13,7 @@ async function MyEventsContent() {
 
 export default function MyEventsPage() {
   return (
-    <Suspense
-      fallback={<p className="text-sm text-muted-foreground">불러오는 중...</p>}
-    >
+    <Suspense fallback={<EventListSkeleton />}>
       <MyEventsContent />
     </Suspense>
   );

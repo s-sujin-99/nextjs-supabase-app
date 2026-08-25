@@ -6,23 +6,23 @@ import { CalendarDays, Plus, User } from "lucide-react";
 // TODO(Task 008): 현재 경로 하이라이트 추가 예정
 export function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 flex h-16 items-center justify-around border-t bg-background sm:hidden">
+    <nav className="fixed inset-x-0 bottom-0 flex h-16 border-t bg-background sm:hidden">
       <Link
         href="/events"
-        className="flex flex-col items-center gap-1 text-xs text-muted-foreground"
+        className="flex h-full flex-1 flex-col items-center justify-center gap-1 text-xs text-muted-foreground"
       >
         <CalendarDays className="size-5" />내 이벤트
       </Link>
       <Link
         href="/events/new"
-        className="flex flex-col items-center gap-1 text-xs text-muted-foreground"
+        className="flex h-full flex-1 flex-col items-center justify-center gap-1 text-xs text-muted-foreground"
       >
         <Plus className="size-5" />
         만들기
       </Link>
       <Link
         href="/profile"
-        className="flex flex-col items-center gap-1 text-xs text-muted-foreground"
+        className="flex h-full flex-1 flex-col items-center justify-center gap-1 text-xs text-muted-foreground"
       >
         <User className="size-5" />
         프로필

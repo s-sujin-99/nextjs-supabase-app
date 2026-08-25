@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowUpDown, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +35,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { deleteUserAction } from "@/lib/actions/gather-admin";
+import { useInfiniteScroll } from "@/lib/hooks/use-infinite-scroll";
 import type { AdminUserRow, UserRole } from "@/lib/types";
 
 const ROLE_LABEL: Record<UserRole, string> = {
@@ -72,7 +73,7 @@ export function AdminUsersTable({
   const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortDesc, setSortDesc] = useState(true);
-  const [page, setPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const filtered = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -97,11 +98,15 @@ export function AdminUsersTable({
       });
   }, [users, search, roleFilter, sortKey, sortDesc]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const paginated = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [search, roleFilter, sortKey, sortDesc]);
+
+  const visibleUsers = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
+  const sentinelRef = useInfiniteScroll(
+    () => setVisibleCount((c) => c + PAGE_SIZE),
+    hasMore,
   );
 
   const toggleSort = (key: SortKey) => {
@@ -111,7 +116,6 @@ export function AdminUsersTable({
       setSortKey(key);
       setSortDesc(true);
     }
-    setPage(1);
   };
 
   const handleDelete = async (user: AdminUserRow) => {
@@ -131,17 +135,11 @@ export function AdminUsersTable({
           placeholder="이름, 이메일로 검색"
           className="max-w-xs"
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setSearch(e.target.value)}
         />
         <Select
           value={roleFilter}
-          onValueChange={(value) => {
-            setRoleFilter(value as UserRole | "all");
-            setPage(1);
-          }}
+          onValueChange={(value) => setRoleFilter(value as UserRole | "all")}
         >
           <SelectTrigger className="w-36">
             <SelectValue />
@@ -186,7 +184,7 @@ export function AdminUsersTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paginated.length === 0 ? (
+          {visibleUsers.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={6}
@@ -196,7 +194,7 @@ export function AdminUsersTable({
               </TableCell>
             </TableRow>
           ) : (
-            paginated.map((user) => {
+            visibleUsers.map((user) => {
               const isSelf = user.id === currentUserId;
               return (
                 <TableRow key={user.id}>
@@ -265,26 +263,19 @@ export function AdminUsersTable({
         </TableBody>
       </Table>
 
-      <div className="flex items-center justify-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={currentPage <= 1}
-          onClick={() => setPage((p) => p - 1)}
-        >
-          이전
-        </Button>
+      <div ref={sentinelRef} className="flex flex-col items-center gap-2 py-2">
         <span className="text-sm text-muted-foreground">
-          {currentPage} / {totalPages}
+          {visibleUsers.length} / {filtered.length}명 표시 중
         </span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={currentPage >= totalPages}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          다음
-        </Button>
+        {hasMore ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+          >
+            더 보기
+          </Button>
+        ) : null}
       </div>
     </div>
   );

@@ -23,7 +23,7 @@ import {
   createEventAction,
   updateEventAction,
 } from "@/lib/actions/gather-events";
-import { parseKstDatetimeLocal } from "@/lib/datetime";
+import { parseKstDatetimeLocal, toKstDateKey } from "@/lib/datetime";
 
 const eventFormSchema = z.object({
   title: z
@@ -43,6 +43,17 @@ const eventFormSchema = z.object({
     .min(1, "장소를 입력해주세요")
     .max(100, "장소는 최대 100자까지 입력할 수 있어요"),
 });
+
+// 새 이벤트는 지난 날짜로 만들 수 없다. 기존 이벤트 수정 시에는 다른 필드만
+// 고치면서 이미 지난 날짜를 그대로 유지하는 경우가 흔하므로 이 제약을 적용하지 않는다.
+const createEventFormSchema = eventFormSchema.refine(
+  (data) => {
+    const todayKey = toKstDateKey(new Date());
+    const eventKey = toKstDateKey(new Date(`${data.eventDate}:00+09:00`));
+    return eventKey >= todayKey;
+  },
+  { message: "지난 날짜는 선택할 수 없어요", path: ["eventDate"] },
+);
 
 export type EventFormValues = z.infer<typeof eventFormSchema>;
 
@@ -66,7 +77,9 @@ export function EventForm({
   const [coverFile, setCoverFile] = useState<File | null>(null);
 
   const form = useForm<EventFormValues>({
-    resolver: zodResolver(eventFormSchema),
+    resolver: zodResolver(
+      mode === "create" ? createEventFormSchema : eventFormSchema,
+    ),
     defaultValues: {
       title: "",
       description: "",
@@ -200,7 +213,12 @@ export function EventForm({
           )}
         />
 
-        <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+        <Button
+          type="submit"
+          size="lg"
+          className="h-12"
+          disabled={form.formState.isSubmitting}
+        >
           {mode === "create" ? "이벤트 생성" : "수정 완료"}
         </Button>
       </form>

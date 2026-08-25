@@ -5,6 +5,7 @@ import { CalendarDays, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { LiveParticipantList } from "@/components/gather/live-participant-list";
 import { EventDetailActions } from "@/components/gather/event-detail-actions";
+import { EventDetailSkeleton } from "@/components/gather/loading-skeleton";
 import {
   getCurrentUserId,
   getEventById,
@@ -102,9 +103,7 @@ export default function EventDetailPage({
   params: Promise<{ eventId: string }>;
 }) {
   return (
-    <Suspense
-      fallback={<p className="text-sm text-muted-foreground">불러오는 중...</p>}
-    >
+    <Suspense fallback={<EventDetailSkeleton />}>
       <EventDetailContent params={params} />
     </Suspense>
   );

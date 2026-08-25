@@ -57,7 +57,7 @@ export function JoinButton({
     return (
       <Button
         size="lg"
-        className="w-full"
+        className="h-12 w-full"
         disabled={isLoading}
         onClick={handleGoogleLogin}
       >
@@ -69,7 +69,7 @@ export function JoinButton({
   return (
     <Button
       size="lg"
-      className="w-full"
+      className="h-12 w-full"
       disabled={isLoading}
       onClick={handleJoin}
     >

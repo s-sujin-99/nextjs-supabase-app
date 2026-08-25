@@ -69,26 +69,36 @@ export function EventDetailActions({
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-3 gap-2">
-        <Button variant="outline" size="sm" onClick={handleCopyLink}>
+        <Button
+          variant="outline"
+          className="h-12"
+          size="sm"
+          onClick={handleCopyLink}
+        >
           <Copy /> 링크 복사
         </Button>
-        <Button variant="outline" size="sm" onClick={handleKakaoShare}>
+        <Button
+          variant="outline"
+          className="h-12"
+          size="sm"
+          onClick={handleKakaoShare}
+        >
           <MessageCircle /> 카카오톡
         </Button>
-        <Button variant="outline" size="sm" asChild>
+        <Button variant="outline" className="h-12" size="sm" asChild>
           <a href={`sms:?body=${encodeURIComponent(inviteUrl)}`}>문자 공유</a>
         </Button>
       </div>
 
       <div className="flex gap-2">
-        <Button variant="secondary" className="flex-1" asChild>
+        <Button variant="secondary" className="h-12 flex-1" asChild>
           <Link href={`/events/${eventId}/edit`}>
             <Pencil /> 이벤트 수정
           </Link>
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive" className="flex-1">
+            <Button variant="destructive" className="h-12 flex-1">
               <Trash2 /> 이벤트 삭제
             </Button>
           </AlertDialogTrigger>

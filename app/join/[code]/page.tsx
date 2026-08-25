@@ -5,6 +5,7 @@ import { CalendarDays, MapPin } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { JoinButton } from "@/components/gather/join-button";
+import { JoinPreviewSkeleton } from "@/components/gather/loading-skeleton";
 import {
   getCurrentUserId,
   getEventPreviewByInviteCode,
@@ -89,7 +90,7 @@ async function JoinContent({ params }: { params: Promise<{ code: string }> }) {
           <p className="text-sm text-muted-foreground">
             이미 참여한 이벤트예요.
           </p>
-          <Button size="lg" className="w-full" asChild>
+          <Button size="lg" className="h-12 w-full" asChild>
             <Link href={`/events/${event.id}`}>이벤트 보러 가기</Link>
           </Button>
         </div>
@@ -112,11 +113,7 @@ export default function JoinEventPage({
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 p-5 text-center">
       <h1 className="text-2xl font-semibold">이벤트 초대</h1>
-      <Suspense
-        fallback={
-          <p className="text-sm text-muted-foreground">불러오는 중...</p>
-        }
-      >
+      <Suspense fallback={<JoinPreviewSkeleton />}>
         <JoinContent params={params} />
       </Suspense>
     </main>

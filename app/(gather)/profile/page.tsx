@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { ProfileForm } from "@/components/gather/profile-form";
+import { ProfileSkeleton } from "@/components/gather/loading-skeleton";
 import { createClient } from "@/lib/supabase/server";
 import type { GatherUser } from "@/lib/types";
 
@@ -32,11 +33,7 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">프로필</h1>
-      <Suspense
-        fallback={
-          <p className="text-sm text-muted-foreground">불러오는 중...</p>
-        }
-      >
+      <Suspense fallback={<ProfileSkeleton />}>
         <ProfileContent />
       </Suspense>
     </div>

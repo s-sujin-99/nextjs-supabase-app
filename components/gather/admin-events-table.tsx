@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowUpDown, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,6 +34,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { deleteEventAction } from "@/lib/actions/gather-events";
+import { useInfiniteScroll } from "@/lib/hooks/use-infinite-scroll";
 import type {
   AdminEventRow,
   EventStatus,
@@ -76,7 +77,7 @@ export function AdminEventsTable({
     useState<StatusFilterOption["value"]>("all");
   const [sortKey, setSortKey] = useState<SortKey>("eventDate");
   const [sortDesc, setSortDesc] = useState(true);
-  const [page, setPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const filtered = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -99,11 +100,15 @@ export function AdminEventsTable({
       });
   }, [events, search, statusFilter, sortKey, sortDesc]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const paginated = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [search, statusFilter, sortKey, sortDesc]);
+
+  const visibleEvents = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
+  const sentinelRef = useInfiniteScroll(
+    () => setVisibleCount((c) => c + PAGE_SIZE),
+    hasMore,
   );
 
   const toggleSort = (key: SortKey) => {
@@ -113,7 +118,6 @@ export function AdminEventsTable({
       setSortKey(key);
       setSortDesc(true);
     }
-    setPage(1);
   };
 
   const handleDelete = async (event: AdminEventRow) => {
@@ -133,17 +137,13 @@ export function AdminEventsTable({
           placeholder="제목, 주최자로 검색"
           className="max-w-xs"
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setSearch(e.target.value)}
         />
         <Select
           value={statusFilter}
-          onValueChange={(value) => {
-            setStatusFilter(value as StatusFilterOption["value"]);
-            setPage(1);
-          }}
+          onValueChange={(value) =>
+            setStatusFilter(value as StatusFilterOption["value"])
+          }
         >
           <SelectTrigger className="w-36">
             <SelectValue />
@@ -189,7 +189,7 @@ export function AdminEventsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paginated.length === 0 ? (
+          {visibleEvents.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={7}
@@ -199,7 +199,7 @@ export function AdminEventsTable({
               </TableCell>
             </TableRow>
           ) : (
-            paginated.map((event) => (
+            visibleEvents.map((event) => (
               <TableRow key={event.id}>
                 <TableCell className="font-medium">{event.title}</TableCell>
                 <TableCell>{event.hostName}</TableCell>
@@ -245,26 +245,19 @@ export function AdminEventsTable({
         </TableBody>
       </Table>
 
-      <div className="flex items-center justify-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={currentPage <= 1}
-          onClick={() => setPage((p) => p - 1)}
-        >
-          이전
-        </Button>
+      <div ref={sentinelRef} className="flex flex-col items-center gap-2 py-2">
         <span className="text-sm text-muted-foreground">
-          {currentPage} / {totalPages}
+          {visibleEvents.length} / {filtered.length}개 표시 중
         </span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={currentPage >= totalPages}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          다음
-        </Button>
+        {hasMore ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+          >
+            더 보기
+          </Button>
+        ) : null}
       </div>
     </div>
   );
