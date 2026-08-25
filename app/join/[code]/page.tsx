@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays, MapPin } from "lucide-react";
 
@@ -11,6 +13,32 @@ import {
   getEventPreviewByInviteCode,
   hasUserJoinedEvent,
 } from "@/lib/supabase/gather-queries";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}): Promise<Metadata> {
+  const { code } = await params;
+  const event = await getEventPreviewByInviteCode(code);
+
+  if (!event) {
+    return { title: "유효하지 않은 초대 코드 - Gather" };
+  }
+
+  const title = `${event.title} - Gather 초대`;
+  const description = `${event.host.name}님이 초대했어요. ${event.location}에서 만나요.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: event.coverImageUrl ? [event.coverImageUrl] : undefined,
+    },
+  };
+}
 
 function formatEventDate(isoDate: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -46,13 +74,15 @@ async function JoinContent({ params }: { params: Promise<{ code: string }> }) {
 
   return (
     <div className="flex w-full flex-col gap-5">
-      <div className="flex h-40 w-full items-center justify-center rounded-lg bg-muted text-sm text-muted-foreground">
+      <div className="relative flex h-40 w-full items-center justify-center rounded-lg bg-muted text-sm text-muted-foreground">
         {event.coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={event.coverImageUrl}
             alt={event.title}
-            className="h-full w-full rounded-lg object-cover"
+            fill
+            sizes="(min-width: 768px) 448px, 100vw"
+            className="rounded-lg object-cover"
+            priority
           />
         ) : (
           "커버 이미지 없음"

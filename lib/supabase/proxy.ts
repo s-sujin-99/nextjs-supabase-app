@@ -51,6 +51,8 @@ export async function updateSession(request: NextRequest) {
   const isAdminPath = pathname.startsWith("/admin");
   const isPublicPath =
     pathname === "/" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/admin/login") ||

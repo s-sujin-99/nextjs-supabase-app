@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { Suspense } from "react";
 import { CalendarDays, MapPin } from "lucide-react";
 
@@ -49,13 +50,15 @@ async function EventDetailContent({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex h-48 w-full items-center justify-center rounded-lg bg-muted text-sm text-muted-foreground">
+      <div className="relative flex h-48 w-full items-center justify-center rounded-lg bg-muted text-sm text-muted-foreground">
         {event.coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={event.coverImageUrl}
             alt={event.title}
-            className="h-full w-full rounded-lg object-cover"
+            fill
+            sizes="(min-width: 768px) 448px, 100vw"
+            className="rounded-lg object-cover"
+            priority
           />
         ) : (
           "커버 이미지 없음"
